@@ -37,6 +37,9 @@ class Car:
         self.update_obj_pos()
         self.update_car_image()
 
+        self.goal_flag = False
+        self.frame = 0
+
 
     def update_sensor(self):
         self.sensor_val = 0
@@ -196,6 +199,16 @@ class Car:
         self.wheel_pos = [[self.wheel_pos_car[led][0] * np.cos(self.car_state[2]) - self.wheel_pos_car[led][1] * np.sin(self.car_state[2]) + self.car_state[0],
                            self.wheel_pos_car[led][0] * np.sin(self.car_state[2]) + self.wheel_pos_car[led][1] * np.cos(self.car_state[2]) + self.car_state[1]] for led in range(2)]
 
+    def check_goal(self):
+        goal_line = [-5, 5, -420, -200]
+
+        if self.frame > 10:
+            for led in self.led_pos:
+                if goal_line[0] <= led[0] <= goal_line[1] and goal_line[2] <= led[1] <= goal_line[3]:
+                    self.goal_flag = True
+        if self.frame > 100:
+            self.goal_flag = True
+
     def update_car_image(self):
         self.car_image = np.ones((840, 1200, 3), dtype=int)
 
@@ -221,6 +234,16 @@ class Car:
                         if -y + 420 < 0 or -y + 420 >= 840 or x + 600 < 0 or x + 600 >= 1200:
                             continue
                         self.car_image[-y + 420, x + 600, :] = [0, 0, 0]
+
+    def update_one_frame(self):
+        self.update_sensor()
+        self.update_duty()
+        self.update_car_pos()
+        self.update_obj_pos()
+        self.check_goal()
+        self.update_car_image()
+        self.image = self.car_image * self.field.field_image
+        self.frame += 1
 
 
 class Field:
@@ -276,20 +299,40 @@ if __name__ == '__main__':
     Ki = 0.15
     Kd = 0.0001"""
 
-    #2.85s
+    """#3.4s
+    duty_init = [85, 85]
+    interval = 100
+    Kp = 0.20
+    Ki = 0.08
+    Kd = 0.0001"""
+
+    #3.1
+    duty_init = [90, 90]
+    interval = 100
+    Kp = 0.20
+    Ki = 0.08
+    Kd = 0.0001
+
+    """duty_init = [95, 95]
+    interval = 100
+    Kp = 0.25
+    Ki = 0.1
+    Kd = 0.0001"""
+
+    """#2.85s
     duty_init = [100, 100]
     interval = 50
     Kp = 0.2
     Ki = 0.1
-    Kd = 0.0001
+    Kd = 0.0001"""
 
     field = Field()
     car = Car(car_state_init, duty_init, field, interval, Kp, Ki, Kd)
 
     fig = plt.figure()
 
-    ims = []
-    for t in range(57):  # 16ms * 100 = 1.6s   50ms * 100 = 5s   100ms * 100 = 10s
+    """ims = []
+    for t in range(34):  # 16ms * 100 = 1.6s   50ms * 100 = 5s   100ms * 100 = 10s
         car.update_sensor()
         car.update_duty()
         car.update_car_pos()
@@ -298,29 +341,14 @@ if __name__ == '__main__':
         image = car.car_image * car.field.field_image
         if t % 1 == 0:
             im = plt.imshow(image, vmin=0, vmax=255, animated=True)
-            ims.append([im])
+            ims.append([im])"""
 
-    anime = animation.ArtistAnimation(fig, ims, interval=50)
+    ims = []
+    while car.goal_flag == 0:
+        car.update_one_frame()
+        im = plt.imshow(car.image, vmin=0, vmax=255, animated=True)
+        ims.append([im])
+    print(car.frame * car.dt)
+
+    anime = animation.ArtistAnimation(fig, ims, interval=100)
     plt.show()
-
-    """def plot(data):
-        plt.cla()
-        car.update_car_pos()
-        car.update_obj_pos()
-        car.update_car_image()
-        image = car.car_image * field.field_image
-        im = plt.imshow(image, vmin=0, vmax=255, cmap='gray', animated=True)
-    ani = animation.FuncAnimation(fig, plot, interval=50)
-    plt.show()"""
-
-    #image = car.car_image * field.field_image
-    #plt.imshow(field.field_image, vmin=0, vmax=255, animated=True)
-
-    """
-    Duty 40 : 3.40
-    Duty 35 : 4.30
-    Duty 30 : 6.38
-    Duty 25 : 8.50
-    Duty 20 : 15.16
-    Duty 15 : 44.55
-    """
