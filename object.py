@@ -331,18 +331,6 @@ if __name__ == '__main__':
 
     fig = plt.figure()
 
-    """ims = []
-    for t in range(34):  # 16ms * 100 = 1.6s   50ms * 100 = 5s   100ms * 100 = 10s
-        car.update_sensor()
-        car.update_duty()
-        car.update_car_pos()
-        car.update_obj_pos()
-        car.update_car_image()
-        image = car.car_image * car.field.field_image
-        if t % 1 == 0:
-            im = plt.imshow(image, vmin=0, vmax=255, animated=True)
-            ims.append([im])"""
-
     ims = []
     while car.goal_flag == 0:
         car.update_one_frame()
